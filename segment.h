@@ -15,6 +15,6 @@ typedef struct {
     int nextsequencenumber;
     char advertisedwindowsize;
     char checksum;
-} ack;
+} acks;
 
 #endif
