@@ -27,62 +27,37 @@ int main(int argc, char** argv) {
 	int destination_ip = stringToInt(argv[4]);
 	int destination_port = stringToInt(argv[5]);
 
-	printf("\nServer running\n");
-	int sock;
+    int sock;
 	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
         perror("Socket error");
-        exit(-1);
+        exit(1);
     }
 
-    struct sockaddr_in ser;
-    ser.sin_family = AF_INET;
-    ser.sin_port = htons(destination_port);
-    ser.sin_addr.s_addr=INADDR_ANY;
-    bzero(&(ser.sin_zero),8);
-    if (bind(sock,(struct sockaddr *)&ser,sizeof(struct sockaddr)) == -1) {
-        perror("Bind error");
-        exit(-1);
+	struct sockaddr_in server_addr;
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(destination_port);
+    server_addr.sin_addr.s_addr= htonl(INADDR_ANY);
+    bzero(&(server_addr.sin_zero),8);
+    if (connect(sock, (struct sockaddr *)&server_addr, sizeof(struct sockaddr)) == -1) {
+        perror("Connect error");
+        exit(1);
     }
-    if (listen(sock,2) == -1) {
-        perror("Listen error");
-        exit(-1);
-    }
-    printf("Waiting for connection\n");
 
-    int size = sizeof(struct sockaddr);
-    struct sockaddr_in cli;
-    int connect = accept(sock,(struct sockaddr *)&cli,&size);
-    if (connect == -1) {
-        perror("Connection failed");
-        exit(-1);
-    }
-    printf("Connected successfully\n");
-
-    int val,count,i;
-    recv(connect,&val,sizeof(val),0);
-    count = val;
-    char senddata[256],recvdata[256];
+    int val,i,count;
+    char recvdata[256],senddata[256];
     while(1) {
-        i = recv(connect,&recvdata,sizeof(recvdata),0);
+    	printf("\nEnter packet number : ");
+    	scanf("%d",&val);
+    	send(sock,&val,sizeof(val),0);
+    	printf("Enter data : ");
+        scanf("%s",senddata);
+        send(sock,senddata,strlen(senddata),0);
+        recv(sock,&count,sizeof(count),0);
+        i = recv(sock,recvdata,256,0);
         recvdata[i]='\0';
-        if (count != val) {
-            strcpy(senddata,"Packet missing : ");
-            send(connect,&count,sizeof(count),0);
-            send(connect,senddata,strlen(senddata),0);
-        }
-        else {
-            printf("Packet Number : %d\n",val);
-            printf("Data : %s\n",recvdata);
-            count++;
-            strcpy(senddata,"Send next :");
-            send(connect,&count,sizeof(count),0);
-            send(connect,senddata,strlen(senddata),0);
-        }
-        printf("The expected packet now is: %d\n",count);
-        recv(connect,&val,sizeof(val),0);
+        printf("%s %d",recvdata,count);
     }
 
-    close(connect);
     close(sock);
 	return 0;
 }
