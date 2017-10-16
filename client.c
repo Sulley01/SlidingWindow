@@ -94,7 +94,7 @@ int main(int argc, char** argv) {
 	sin_size = sizeof(struct sockaddr);
 
 	// Start sending message
-	//while (1) {
+	while (1) {
 		// Variables
 		char buff[buffersize];
 		segment seg;
@@ -102,7 +102,8 @@ int main(int argc, char** argv) {
 		char segstr[9];
 
 		// Write buffer from file
-		FILE *f = fopen(filename, "r");
+		FILE *f; 
+		f = fopen(filename, "r");
 		fgets(buff, buffersize, f);
 		printf("Buffer Received : %s\n", buff);
 		if (f == NULL) {
@@ -133,7 +134,7 @@ int main(int argc, char** argv) {
 
 		// Receive ACK
 		char ackstr[7];
-		int bytes_recv = recvfrom(sock, ackstr, 7, 0, (struct sockaddr *)&server_addr, (socklen_t*)&sin_size);
+		bytes_recv = recvfrom(sock, ackstr, 7, 0, (struct sockaddr *)&server_addr, (socklen_t*)&sin_size);
 		printf("ACK Received : %s\n", ackstr);
 
 		// Test ACK
@@ -141,7 +142,7 @@ int main(int argc, char** argv) {
 		printf("ACKS : \n");
 		printACK(ackseg);
 		fflush(stdout);
-	//}
+	}
 
 	close(sock);
 	return 0;
