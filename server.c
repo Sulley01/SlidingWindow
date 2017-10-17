@@ -148,7 +148,6 @@ int main(int argc, char** argv) {
 				// Make string from ACK
 				ACKToString(&ackseg, ackstr);
 
-				// Send ACK
 				sendto(sock, ackstr, 7, 0, (struct sockaddr *)&client_addr, sizeof(struct sockaddr));
 
 				// Test ACK
@@ -159,7 +158,7 @@ int main(int argc, char** argv) {
 		}
 
 		if (buff[6] == '.') {
-			break;
+			exit(1);
 		}
     }
     fclose(f);
