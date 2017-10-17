@@ -12,6 +12,16 @@
 
 #include "segment.h"
 
+int8_t CheckSumACK(acks ackdata){
+	int8_t checksum = 0;
+	int8_t* acktemp = (int8_t*)&ackdata;
+	int8_t i;
+	for(i=0; i<6; i++){
+		checksum += sizeof(acktemp[i]);
+	}
+	return checksum;
+}
+
 void stringToSegment(char* s, segment* seg) {
 	seg->soh = *s;
 	seg->sequencenumber = *(s + 1);

@@ -10,6 +10,17 @@
 
 #include "segment.h"
 
+
+int8_t CheckSumSegment(segment segdata){
+	int8_t checksum = 0;
+	int8_t* segtemp = (int8_t*)&segdata;
+	int8_t i;
+	for(i=0; i<8; i++){
+		checksum += sizeof(segtemp[i]);
+	}
+	return checksum;
+}
+
 void stringToSegment(char* s, segment* seg) {
 	seg->soh = *s;
 	seg->sequencenumber = *(s + 1);

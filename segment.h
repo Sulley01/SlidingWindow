@@ -8,13 +8,13 @@ typedef struct {
     char data;
     char etx;
     char checksum;
-} segment;
+} __attribute__((packed)) segment;
 
 typedef struct {
     char ack;
     int nextsequencenumber;
     char advertisedwindowsize;
     char checksum;
-} acks;
+} __attribute__((packed)) acks;
 
 #endif
