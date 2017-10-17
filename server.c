@@ -100,7 +100,7 @@ int main(int argc, char** argv) {
     addr_len = sizeof(struct sockaddr);
 
     // Wait for client
-    printf("\nUDPServer Waiting for client on port %d", port);
+    printf("\nUDPServer Waiting for client on port %d\n", port);
     fflush(stdout);
 
 	// Variables
@@ -110,6 +110,7 @@ int main(int argc, char** argv) {
 	char ackstr[7];
     FILE *f;
 	f = fopen(filename, "w+");
+	int curr_window_size = windowsize;
 
 	// Start receiving message
     while (1) {
@@ -129,35 +130,43 @@ int main(int argc, char** argv) {
 			seg.data = *(buff+6);
 			seg.etx = *(buff+7);
 			seg.checksum = *(buff+8);
-		}
 
-		// Test segment
-		printf("Segment : \n");
-		printSegment(seg);
-		fflush(stdout);
-
-		// Write segment to file
-		fputc(seg.data, f);
-
-		//if (checksum) {
-			// Make ACK
-			ackseg.ack = '\06';
-			ackseg.nextsequencenumber = seg.sequencenumber + 1;
-			ackseg.advertisedwindowsize = windowsize;
-			ackseg.checksum = 'c';
-
-			// Make string from ACK
-			ACKToString(&ackseg, ackstr);
-
-			// Send ACK
-			sendto(sock, ackstr, 7, 0, (struct sockaddr *)&client_addr, sizeof(struct sockaddr));
+			// Test segment
+			printf("\n*RECEIVED SEGMENT %d*\n",seg.sequencenumber);
+			printSegment(seg);
 			fflush(stdout);
-		//}
 
-		// Test ACK
-		printf("ACKS : \n");
-		printACK(ackseg);
-		fflush(stdout);
+			// Write segment to file
+			fputc(seg.data, f);
+
+			//if (checksum) {
+				// Make ACK
+				curr_window_size--;
+				if (curr_window_size == -1) {
+					curr_window_size = windowsize-1;
+				}
+				ackseg.ack = '\06';
+				ackseg.nextsequencenumber = seg.sequencenumber + windowsize;
+				ackseg.advertisedwindowsize = curr_window_size;
+				ackseg.checksum = 'c';
+
+				// Make string from ACK
+				ACKToString(&ackseg, ackstr);
+
+				// Send ACK
+				if (ackseg.nextsequencenumber != 7) {
+
+				sendto(sock, ackstr, 7, 0, (struct sockaddr *)&client_addr, sizeof(struct sockaddr));
+
+				}
+				fflush(stdout);
+			//}
+
+			// Test ACK
+			printf("\n*SENT ACKS %d*\n",seg.sequencenumber);
+			printACK(ackseg);
+			fflush(stdout);
+		}
 
 		if (buff[6] == '.') {
 			break;

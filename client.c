@@ -103,10 +103,13 @@ int main(int argc, char** argv) {
 	FILE *f; 
 	f = fopen(filename, "r");
 	int i = 0;
+	int window_left = 1;
+	int window_right = window_left + windowsize - 1;
+	int curr_window = 1;
+	int ack_target = 1;
 
 	// Write buffer from file
 	fgets(buff, buffersize, f);
-	printf("Buffer Received : %s\n", buff);
 	if (f == NULL) {
 		perror("File");
 		exit(1);
@@ -114,37 +117,45 @@ int main(int argc, char** argv) {
 	else {
 		// Start sending message
 		while (i < strlen(buff)) {
-			// Create segment from buffer
-			seg.soh = '\01';
-			seg.sequencenumber = i+1;
-			seg.stx = '\02';
-			seg.data = buff[i];
-			seg.etx = '\03';
-			seg.checksum = 'c';
+			while (i < strlen(buff) && curr_window >= window_left && curr_window <= window_right) {
+				// Create segment from buffer
+				seg.soh = '\01';
+				seg.sequencenumber = i+1;
+				seg.stx = '\02';
+				seg.data = buff[i];
+				seg.etx = '\03';
+				seg.checksum = 'c';
 
-			// Make string from segment
-			segmentToString(&seg, segstr);
+				// Make string from segment
+				segmentToString(&seg, segstr);
 
-			// Test segment
-			printf("Segment : \n");
-			printSegment(seg);
-			fflush(stdout);
+				// Test segment
+				printf("\n*SENT SEGMENT %d*\n",seg.sequencenumber);
+				printSegment(seg);
+				fflush(stdout);
 
-			// Send segment
-			sendto(sock, segstr, 9, 0, (struct sockaddr *)&server_addr, sizeof(struct sockaddr));
+				// Send segment
+				sendto(sock, segstr, 9, 0, (struct sockaddr *)&server_addr, sizeof(struct sockaddr));
 
-			// Receive ACK
-			char ackstr[7];
-			bytes_recv = recvfrom(sock, ackstr, 7, 0, (struct sockaddr *)&server_addr, (socklen_t*)&sin_size);
-			printf("ACK Received : %s\n", ackstr);
+				// Receive ACK
+				char ackstr[7];
+				bytes_recv = recvfrom(sock, ackstr, 7, 0, (struct sockaddr *)&server_addr, (socklen_t*)&sin_size);
 
-			// Test ACK
-			stringToACK(ackstr, &ackseg);
-			printf("ACKS : \n");
-			printACK(ackseg);
-			fflush(stdout);
+				// Test ACK
+				stringToACK(ackstr, &ackseg);
+				printf("\n*RECEIVED ARKS %d*\n",ackseg.nextsequencenumber-windowsize);
+				printACK(ackseg);
+				fflush(stdout);
 
-			i++;
+				i++;
+				curr_window++;
+			}
+			// Check ACK
+			if (ackseg.advertisedwindowsize == 0) {
+				window_left += windowsize;
+				window_right += windowsize;
+				printf("\n*WINDOW EXPANDED*\n");
+			}
 		}
 	}
 	fclose(f);
