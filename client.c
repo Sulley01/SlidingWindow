@@ -115,8 +115,9 @@ int main(int argc, char** argv) {
 		exit(1);
 	}
 	else {
-		// Start sending message
+		// Start
 		while (i < strlen(buff)) {
+			// Send message
 			while (i < strlen(buff) && curr_window >= window_left && curr_window <= window_right) {
 				// Create segment from buffer
 				seg.soh = '\01';
@@ -129,33 +130,38 @@ int main(int argc, char** argv) {
 				// Make string from segment
 				segmentToString(&seg, segstr);
 
+				// Send segment
+				sendto(sock, segstr, 9, 0, (struct sockaddr *)&server_addr, sizeof(struct sockaddr));
+
 				// Test segment
 				printf("\n*SENT SEGMENT %d*\n",seg.sequencenumber);
 				printSegment(seg);
 				fflush(stdout);
 
-				// Send segment
-				sendto(sock, segstr, 9, 0, (struct sockaddr *)&server_addr, sizeof(struct sockaddr));
-
-				// Receive ACK
-				char ackstr[7];
-				bytes_recv = recvfrom(sock, ackstr, 7, 0, (struct sockaddr *)&server_addr, (socklen_t*)&sin_size);
-
-				// Test ACK
-				stringToACK(ackstr, &ackseg);
-				printf("\n*RECEIVED ARKS %d*\n",ackseg.nextsequencenumber-windowsize);
-				printACK(ackseg);
-				fflush(stdout);
-
 				i++;
 				curr_window++;
 			}
-			// Check ACK
-			if (ackseg.advertisedwindowsize == 0) {
-				window_left += windowsize;
-				window_right += windowsize;
-				printf("\n*WINDOW EXPANDED*\n");
-			}
+
+			// Receive ACK
+			int countack = 0;
+			do {
+				// Receive ACK
+				char ackstr[7];
+				bytes_recv = recvfrom(sock, ackstr, 7, 0, (struct sockaddr *)&server_addr, (socklen_t*)&sin_size);
+				if (bytes_recv >= 0) {
+					// Test ACK
+					stringToACK(ackstr, &ackseg);
+					printf("\n*RECEIVED ARKS %d*\n",ackseg.nextsequencenumber-windowsize);
+					printACK(ackseg);
+					fflush(stdout);
+					countack++;
+				}
+			} while (countack < windowsize);
+			
+			// Expand window
+			window_left += windowsize;
+			window_right += windowsize;
+			printf("\n*WINDOW EXPANDED*\n");
 		}
 	}
 	fclose(f);

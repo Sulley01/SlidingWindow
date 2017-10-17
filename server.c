@@ -110,9 +110,8 @@ int main(int argc, char** argv) {
 	char ackstr[7];
     FILE *f;
 	f = fopen(filename, "w+");
-	int curr_window_size = windowsize;
 
-	// Start receiving message
+	// Start
     while (1) {
     	// Read buffer
 		bytes_read = recvfrom(sock, buff, 9, 0, (struct sockaddr *)&client_addr, (socklen_t*)&addr_len);
@@ -141,31 +140,22 @@ int main(int argc, char** argv) {
 
 			//if (checksum) {
 				// Make ACK
-				curr_window_size--;
-				if (curr_window_size == -1) {
-					curr_window_size = windowsize-1;
-				}
 				ackseg.ack = '\06';
 				ackseg.nextsequencenumber = seg.sequencenumber + windowsize;
-				ackseg.advertisedwindowsize = curr_window_size;
+				ackseg.advertisedwindowsize = windowsize;
 				ackseg.checksum = 'c';
 
 				// Make string from ACK
 				ACKToString(&ackseg, ackstr);
 
 				// Send ACK
-				if (ackseg.nextsequencenumber != 7) {
-
 				sendto(sock, ackstr, 7, 0, (struct sockaddr *)&client_addr, sizeof(struct sockaddr));
 
-				}
+				// Test ACK
+				printf("\n*SENT ACKS %d*\n",seg.sequencenumber);
+				printACK(ackseg);
 				fflush(stdout);
 			//}
-
-			// Test ACK
-			printf("\n*SENT ACKS %d*\n",seg.sequencenumber);
-			printACK(ackseg);
-			fflush(stdout);
 		}
 
 		if (buff[6] == '.') {
