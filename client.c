@@ -103,21 +103,24 @@ int main(int argc, char** argv) {
 	char segstr[9];
 	FILE *f; 
 	f = fopen(filename, "r");
-	int i = 0;
 	int window_left = 1;
 	int window_right = window_left + windowsize - 1;
 	int curr_window = 1;
 	int ack_target = 1;
+	int bufflen = 0;
 
 	// Start
 	while (fgets(buff, buffersize, f) != NULL) {
+		int i = 0;
+		printf("%s",buff);
+		fflush(stdout);
 		buff[strlen(buff)] = '\0';
 		// Send message
 		while (i < strlen(buff)) {
 			while (i < strlen(buff) && curr_window >= window_left && curr_window <= window_right) {
 				// Create segment from buffer
 				seg.soh = '\01';
-				seg.sequencenumber = i+1;
+				seg.sequencenumber = i+1+bufflen;
 				seg.stx = '\02';
 				seg.data = buff[i];
 				seg.etx = '\03';
@@ -158,16 +161,13 @@ int main(int argc, char** argv) {
 				if (ackseg.ack == '\06') {
 					valintcheck[k]++;
 					countack++;
-					printf("\n*RECEIVED ARKS %d*\n",ackseg.nextsequencenumber-windowsize);
+					printf("\n*RECEIVED ACKS %d*\n",ackseg.nextsequencenumber-windowsize);
 				}
 				else {
-					printf("\n*RECEIVED BROKEN ARKS %d*\n",ackseg.nextsequencenumber-windowsize);
+					printf("\n*RECEIVED BROKEN ACKS %d*\n",ackseg.nextsequencenumber-windowsize);
 				}
 				printACK(ackseg);
 				fflush(stdout);
-				if (ackseg.nextsequencenumber-windowsize == strlen(buff)) {
-					exit(1);
-				}
 				k++;
 				iter++;
 			}
@@ -205,16 +205,13 @@ int main(int argc, char** argv) {
 						if (ackseg.ack == '\06') {
 							valintcheck[k]++;
 							countack++;
-							printf("\n*RECEIVED ARKS %d*\n",ackseg.nextsequencenumber-windowsize);
+							printf("\n*RECEIVED ACKS %d*\n",ackseg.nextsequencenumber-windowsize);
 						}
 						else {
-							printf("\n*RECEIVED BROKEN ARKS %d*\n",ackseg.nextsequencenumber-windowsize);
+							printf("\n*RECEIVED BROKEN ACKS %d*\n",ackseg.nextsequencenumber-windowsize);
 						}
 						printACK(ackseg);
 						fflush(stdout);
-						if (ackseg.nextsequencenumber-windowsize == strlen(buff)) {
-							exit(1);
-						}
 					}
 				}
 			}
@@ -223,6 +220,7 @@ int main(int argc, char** argv) {
 			window_right += windowsize;
 			printf("\n*WINDOW EXPANDED*\n");
 		}
+		bufflen += strlen(buff);
 	}
 	fclose(f);
 
