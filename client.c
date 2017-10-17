@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "segment.h"
 
@@ -144,24 +145,61 @@ int main(int argc, char** argv) {
 
 			// Receive ACK
 			int countack = 0;
+			int checkack[4];
+			int valintcheck[4];
+			for (int j=0;j<4;j++) {
+				checkack[j] = i+j-4;
+				valintcheck[j] = 0;
+			}
+			int k = 0;
+			int iter = 0;
 			do {
 				// Receive ACK
 				char ackstr[7];
-				bytes_recv = recvfrom(sock, ackstr, 7, 0, (struct sockaddr *)&server_addr, (socklen_t*)&sin_size);
-				if (bytes_recv >= 0) {
+				if (bytes_recv = recvfrom(sock, ackstr, 7, 0, (struct sockaddr *)&server_addr, (socklen_t*)&sin_size) >= 0) {
 					// Test ACK
 					stringToACK(ackstr, &ackseg);
+					checkack[k] = ackseg.nextsequencenumber-windowsize;
+					valintcheck[k]++;
 					printf("\n*RECEIVED ARKS %d*\n",ackseg.nextsequencenumber-windowsize);
 					printACK(ackseg);
 					fflush(stdout);
 					countack++;
+					k++;
 				}
-			} while (countack < windowsize);
-			
-			// Expand window
-			window_left += windowsize;
-			window_right += windowsize;
-			printf("\n*WINDOW EXPANDED*\n");
+				iter++;
+			} while (countack < windowsize && iter < 8);
+			if (countack < windowsize) {
+				// Retransmit
+				for (int l=0;l<4;l++) {
+					if (valintcheck[l] == 0) {
+						// Create segment from buffer
+						seg.soh = '\01';
+						seg.sequencenumber = checkack[l];
+						seg.stx = '\02';
+						seg.data = buff[checkack[l]];
+						seg.etx = '\03';
+						seg.checksum = 'c';
+
+						// Make string from segment
+						segmentToString(&seg, segstr);
+
+						// Send segment
+						sendto(sock, segstr, 9, 0, (struct sockaddr *)&server_addr, sizeof(struct sockaddr));
+
+						// Test segment
+						printf("\n*SENT SEGMENT %d*\n",seg.sequencenumber);
+						printSegment(seg);
+						fflush(stdout);
+					}
+				}
+			}
+			else {
+				// Expand window
+				window_left += windowsize;
+				window_right += windowsize;
+				printf("\n*WINDOW EXPANDED*\n");
+			}
 		}
 	}
 	fclose(f);
