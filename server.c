@@ -26,6 +26,7 @@ void segmentToString(segment* seg, char* s) {
 	*(s+6) = seg->data;
 	*(s+7) = seg->etx;
 	*(s+8) = seg->checksum;
+	*(s+9) = '\0';
 }
 
 void stringToACK(char* s, acks* ackseg) {
@@ -40,6 +41,7 @@ void ACKToString(acks* seg, char* s) {
 	*(s+1) = seg->nextsequencenumber;
 	*(s+5) = seg->advertisedwindowsize;
 	*(s+6) = seg->checksum;
+	*(s+7) = '\0';
 }
 
 void printSegment(segment seg) {
@@ -101,16 +103,18 @@ int main(int argc, char** argv) {
     printf("\nUDPServer Waiting for client on port %d", port);
     fflush(stdout);
 
-    // Start receiving message
-    while (1) {
-    	// Variables
-		char buff[buffersize];
-		segment seg;
-		acks ackseg;
-		char ackstr[7];
+	// Variables
+	char buff[buffersize];
+	segment seg;
+	acks ackseg;
+	char ackstr[7];
+    FILE *f;
+	f = fopen(filename, "w+");
 
-		// Read buffer
-		int bytes_read = recvfrom(sock, buff, 9, 0, (struct sockaddr *)&client_addr, (socklen_t*)&addr_len);
+	// Start receiving message
+    while (1) {
+    	// Read buffer
+		bytes_read = recvfrom(sock, buff, 9, 0, (struct sockaddr *)&client_addr, (socklen_t*)&addr_len);
 		if (bytes_read < 0) {
 			perror("Buffer");
 			exit(1);
@@ -133,10 +137,7 @@ int main(int argc, char** argv) {
 		fflush(stdout);
 
 		// Write segment to file
-		FILE *fp;
-		fp = fopen(filename, "w+");
-		fputc(seg.data, fp);
-		fclose(fp);
+		fputc(seg.data, f);
 
 		//if (checksum) {
 			// Make ACK
@@ -157,7 +158,12 @@ int main(int argc, char** argv) {
 		printf("ACKS : \n");
 		printACK(ackseg);
 		fflush(stdout);
+
+		if (buff[6] == '.') {
+			break;
+		}
     }
+    fclose(f);
 
     close(sock);
     return 0;

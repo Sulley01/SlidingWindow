@@ -27,6 +27,7 @@ void segmentToString(segment* seg, char* s) {
 	*(s+6) = seg->data;
 	*(s+7) = seg->etx;
 	*(s+8) = seg->checksum;
+	*(s+9) = '\0';
 }
 
 void stringToACK(char* s, acks* ackseg) {
@@ -41,6 +42,7 @@ void ACKToString(acks* seg, char* s) {
 	*(s+1) = seg->nextsequencenumber;
 	*(s+5) = seg->advertisedwindowsize;
 	*(s+6) = seg->checksum;
+	*(s+7) = '\0';
 }
 
 void printSegment(segment seg) {
@@ -93,29 +95,30 @@ int main(int argc, char** argv) {
 	bzero(&(server_addr.sin_zero),8);
 	sin_size = sizeof(struct sockaddr);
 
-	// Start sending message
-	while (1) {
-		// Variables
-		char buff[buffersize];
-		segment seg;
-		acks ackseg;
-		char segstr[9];
+	// Variables
+	char buff[buffersize];
+	segment seg;
+	acks ackseg;
+	char segstr[9];
+	FILE *f; 
+	f = fopen(filename, "r");
+	int i = 0;
 
-		// Write buffer from file
-		FILE *f; 
-		f = fopen(filename, "r");
-		fgets(buff, buffersize, f);
-		printf("Buffer Received : %s\n", buff);
-		if (f == NULL) {
-			perror("File");
-			exit(1);
-		}
-		else {
+	// Write buffer from file
+	fgets(buff, buffersize, f);
+	printf("Buffer Received : %s\n", buff);
+	if (f == NULL) {
+		perror("File");
+		exit(1);
+	}
+	else {
+		// Start sending message
+		while (i < strlen(buff)) {
 			// Create segment from buffer
 			seg.soh = '\01';
-			seg.sequencenumber = 1;
+			seg.sequencenumber = i+1;
 			seg.stx = '\02';
-			seg.data = buff[0];
+			seg.data = buff[i];
 			seg.etx = '\03';
 			seg.checksum = 'c';
 
@@ -129,20 +132,22 @@ int main(int argc, char** argv) {
 
 			// Send segment
 			sendto(sock, segstr, 9, 0, (struct sockaddr *)&server_addr, sizeof(struct sockaddr));
+
+			// Receive ACK
+			char ackstr[7];
+			bytes_recv = recvfrom(sock, ackstr, 7, 0, (struct sockaddr *)&server_addr, (socklen_t*)&sin_size);
+			printf("ACK Received : %s\n", ackstr);
+
+			// Test ACK
+			stringToACK(ackstr, &ackseg);
+			printf("ACKS : \n");
+			printACK(ackseg);
+			fflush(stdout);
+
+			i++;
 		}
-		fclose(f);
-
-		// Receive ACK
-		char ackstr[7];
-		bytes_recv = recvfrom(sock, ackstr, 7, 0, (struct sockaddr *)&server_addr, (socklen_t*)&sin_size);
-		printf("ACK Received : %s\n", ackstr);
-
-		// Test ACK
-		stringToACK(ackstr, &ackseg);
-		printf("ACKS : \n");
-		printACK(ackseg);
-		fflush(stdout);
 	}
+	fclose(f);
 
 	close(sock);
 	return 0;
