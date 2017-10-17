@@ -118,12 +118,11 @@ int main(int argc, char** argv) {
 	int curr_window = 1;
 	int ack_target = 1;
 	int bufflen = 0;
+	int end = 0;
 
 	// Start
 	while (fgets(buff, buffersize, f) != NULL) {
 		int i = 0;
-		printf("%s",buff);
-		fflush(stdout);
 		buff[strlen(buff)] = '\0';
 		// Send message
 		while (i < strlen(buff)) {
@@ -134,7 +133,8 @@ int main(int argc, char** argv) {
 				seg.stx = '\02';
 				seg.data = buff[i];
 				seg.etx = '\03';
-				seg.checksum = 'c';
+				seg.checksum = 8;
+				end = buff[i] == '.';
 
 				// Make string from segment
 				segmentToString(&seg, segstr);
@@ -168,7 +168,7 @@ int main(int argc, char** argv) {
 
 				// Test ACK
 				stringToACK(ackstr, &ackseg);
-				if (ackseg.ack == '\06') {
+				if (ackseg.ack == '\06' && ackseg.checksum == CheckSumACK(ackseg)) {
 					valintcheck[k]++;
 					countack++;
 					printf("\n*RECEIVED ACKS %d*\n",ackseg.nextsequencenumber-windowsize);
@@ -178,6 +178,9 @@ int main(int argc, char** argv) {
 				}
 				printACK(ackseg);
 				fflush(stdout);
+				if (end) {
+					exit(1);
+				}
 				k++;
 				iter++;
 			}
@@ -193,7 +196,7 @@ int main(int argc, char** argv) {
 						seg.stx = '\02';
 						seg.data = buff[checkack[l]];
 						seg.etx = '\03';
-						seg.checksum = 'c';
+						seg.checksum = 8;
 
 						// Make string from segment
 						segmentToString(&seg, segstr);
@@ -212,7 +215,7 @@ int main(int argc, char** argv) {
 
 						// Test ACK
 						stringToACK(ackstr, &ackseg);
-						if (ackseg.ack == '\06') {
+						if (ackseg.ack == '\06' && ackseg.checksum == CheckSumACK(ackseg)) {
 							valintcheck[k]++;
 							countack++;
 							printf("\n*RECEIVED ACKS %d*\n",ackseg.nextsequencenumber-windowsize);
@@ -222,6 +225,9 @@ int main(int argc, char** argv) {
 						}
 						printACK(ackseg);
 						fflush(stdout);
+						if (end) {
+							exit(1);
+						}
 					}
 				}
 			}

@@ -149,12 +149,13 @@ int main(int argc, char** argv) {
 			// Write segment to file
 			fputc(seg.data, f);
 
-			//if (checksum) {
+			// Check segment checksum
+			if (seg.checksum == CheckSumSegment(seg)) {
 				// Make ACK
 				ackseg.ack = '\06';
 				ackseg.nextsequencenumber = seg.sequencenumber + windowsize;
 				ackseg.advertisedwindowsize = windowsize;
-				ackseg.checksum = 'c';
+				ackseg.checksum = 6;
 
 				// Make string from ACK
 				ACKToString(&ackseg, ackstr);
@@ -165,7 +166,7 @@ int main(int argc, char** argv) {
 				printf("\n*SENT ACKS %d*\n",seg.sequencenumber);
 				printACK(ackseg);
 				fflush(stdout);
-			//}
+			}
 		}
 
 		if (buff[6] == '.') {

@@ -14,7 +14,7 @@ typedef struct {
     char ack;
     int nextsequencenumber;
     char advertisedwindowsize;
-    char checksum;
+    int8_t checksum;
 } __attribute__((packed)) acks;
 
 #endif
