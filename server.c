@@ -116,6 +116,8 @@ int main(int argc, char** argv) {
 
 	// Variables
 	char buff[buffersize];
+	char bufftemp[9];
+	int i = 0;
 	segment seg;
 	acks ackseg;
 	char ackstr[7];
@@ -125,41 +127,50 @@ int main(int argc, char** argv) {
 	// Start
     while (1) {
     	// Read buffer
-		bytes_read = recvfrom(sock, buff, 9, 0, (struct sockaddr *)&client_addr, (socklen_t*)&addr_len);
+		bytes_read = recvfrom(sock, bufftemp, 9, 0, (struct sockaddr *)&client_addr, (socklen_t*)&addr_len);
 		if (bytes_read < 0) {
 			perror("Buffer");
 			exit(1);
 		}
-		buff[bytes_read] = '\0';
+		bufftemp[bytes_read] = '\0';
 
 		// Create segment from buffer
-		if (*buff == '\01' && *(buff+5) == '\02' && *(buff+7) == '\03') {
-			seg.soh = *buff;
-			seg.sequencenumber = *(buff+1);
-			seg.stx = *(buff+5);
-			seg.data = *(buff+6);
-			seg.etx = *(buff+7);
-			seg.checksum = *(buff+8);
+		if (*bufftemp == '\01' && *(bufftemp+5) == '\02' && *(bufftemp+7) == '\03') {
+			seg.soh = *bufftemp;
+			seg.sequencenumber = *(bufftemp+1);
+			seg.stx = *(bufftemp+5);
+			seg.data = *(bufftemp+6);
+			seg.etx = *(bufftemp+7);
+			seg.checksum = *(bufftemp+8);
 
 			// Test segment
 			printf("\n*RECEIVED SEGMENT %d*\n",seg.sequencenumber);
 			printSegment(seg);
 			fflush(stdout);
 
-			// Write segment to file
-			fputc(seg.data, f);
-
 			// Check segment checksum
 			if (seg.checksum == CheckSumSegment(seg)) {
+				// Input segment to buffer
+				for (int j=0;j<9;j++) {
+					buff[i] = bufftemp[j];
+					i++;
+					if (i == buffersize) {
+						// Write segment to file
+						for (int k=6;k<buffersize;k=k+9) {
+							fputc(buff[k], f);
+						}
+						i = 0;
+					}
+				}
+
 				// Make ACK
 				ackseg.ack = '\06';
 				ackseg.nextsequencenumber = seg.sequencenumber + windowsize;
 				ackseg.advertisedwindowsize = windowsize;
 				ackseg.checksum = 6;
 
-				// Make string from ACK
+				// Send string from ACK
 				ACKToString(&ackseg, ackstr);
-
 				sendto(sock, ackstr, 7, 0, (struct sockaddr *)&client_addr, sizeof(struct sockaddr));
 
 				// Test ACK
@@ -170,6 +181,10 @@ int main(int argc, char** argv) {
 		}
 
 		if (buff[6] == '.') {
+			// Write segment to file
+			for (int k=6;k<i;k=k+9) {
+				fputc(buff[k], f);
+			}
 			exit(1);
 		}
     }
