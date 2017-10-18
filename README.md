@@ -2,7 +2,7 @@
 Simulasi sliding window memanfaatkan UDP Socket
 ## Petunjuk Pengunaan Program
 1. Clone atau Zip repository
-2. Jalankan command Make setelah diclone atau zip di ekstrak
+2. Jalankan command make setelah diclone atau zip di ekstrak
 3. Eksekusi file dengan format berikut:
 	./sendfile <filename> <windowsize> <buffersize> <destination_ip> <destination_port>
 	./recvfile <filename> <windowsize> <buffersize> <port>
@@ -34,9 +34,9 @@ Simulasi sliding window memanfaatkan UDP Socket
 20. Client dan server menutup file dan socket.
 
 ## Pembagian tugas
-* Alvin Sullivan - 13515048
-* Christopher Clement Andreas - 13515105
-* Kevin - 13515138
+* Alvin Sullivan - 13515048 : Fungsionalitas sendfile, receivefile
+* Christopher Clement Andreas - 13515105 : Fungsionalitas receivefile, template socket UDP 
+* Kevin - 13515138: Fungsionalitas Checksum, bonus Logfile(terbatas pada log ACK dan WINDOWS)
 
 ## Jawaban Pertanyaan
 
@@ -115,6 +115,6 @@ SOH(0x1)  | Sequence Number | STX(0x2)  | Data    | ETX (0x3) | checksum |
 1 byte    |   4 byte        | 1 byte    |  1 byte |   1 byte  |   1 byte |
 
 Reference:
-http://www.tcpipguide.com/free/t_TCPMessageSegmentFormat-3.htm
-http://www.freesoft.org/CIE/Course/Section4/8.htm
-http://www.inetdaemon.com/tutorials/internet/tcp/3-way_handshake.shtml
+* http://www.tcpipguide.com/free/t_TCPMessageSegmentFormat-3.htm
+* http://www.freesoft.org/CIE/Course/Section4/8.htm
+* http://www.inetdaemon.com/tutorials/internet/tcp/3-way_handshake.shtml
