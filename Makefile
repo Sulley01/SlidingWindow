@@ -4,17 +4,17 @@ default: sendfile recvfile
 
 all: sendfile recvfile
 
-server.o: server.cpp segment.h
-$(CC) -c server.cpp
+server.o: src/server.cpp src/segment.h
+	$(CC) -c src/server.cpp
 
-client.o: client.cpp segment.h
-$(CC) -c client.cpp
+client.o: src/client.cpp src/segment.h
+	$(CC) -c src/client.cpp
 
 sendfile: client.o
-$(CC) -o sendfile client.o
+	$(CC) -o sendfile client.o
 
 recvfile: server.o
-$(CC) -o recvfile server.o
+	$(CC) -o recvfile server.o
 
 clean:
 	rm - f *.0
