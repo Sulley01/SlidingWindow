@@ -105,6 +105,12 @@ int main(int argc, char** argv) {
 	server_addr.sin_addr = *((struct in_addr *)host->h_addr);
 	bzero(&(server_addr.sin_zero),8);
 	sin_size = sizeof(struct sockaddr);
+	struct timeval tv;
+	tv.tv_sec = 0;
+	tv.tv_usec = 100000;
+	if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv)) < 0) {
+    	perror("Timeout");
+	}
 
 	// Variables
 	char buff[buffersize];

@@ -101,6 +101,12 @@ int main(int argc, char** argv) {
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(port);
     server_addr.sin_addr.s_addr = INADDR_ANY;
+    struct timeval tv;
+	tv.tv_sec = 0;
+	tv.tv_usec = 100000;
+	if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv)) < 0) {
+    	perror("Timeout");
+	}
 
     // Bind socket
     if (bind(sock,(struct sockaddr *)&server_addr, sizeof(struct sockaddr)) == -1) {
