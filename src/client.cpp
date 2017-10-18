@@ -75,7 +75,7 @@ void printACK(acks ackseg) {
 int main(int argc, char** argv) {
 	// Validate execution format
 	if (argc < 6) {
-		perror("Execution Format : ./sendfile <filename> <windowsize> <buffersize> <destination_ip> <destionation_port>");
+		perror("Execution Format : ./sendfile <filename> <windowsize> <buffersize> <destination_ip> <destination_port>");
 		exit(1);
 	}
 
@@ -118,7 +118,6 @@ int main(int argc, char** argv) {
 	int curr_window = 1;
 	int ack_target = 1;
 	int bufflen = 0;
-	int end = 0;
 
 	// Start
 	while (fgets(buff, buffersize, f) != NULL) {
@@ -134,7 +133,6 @@ int main(int argc, char** argv) {
 				seg.data = buff[i];
 				seg.etx = '\03';
 				seg.checksum = 8;
-				end = buff[i] == '.';
 
 				// Make string from segment
 				segmentToString(&seg, segstr);
@@ -152,11 +150,15 @@ int main(int argc, char** argv) {
 			}
 
 			// Initialize receive ACK
+			int countwindow = i;
+			while (countwindow-4 > 0) {
+				countwindow -= 4;
+			}
 			int countack = 0;
-			int checkack[windowsize];
-			int valintcheck[windowsize];
-			for (int j=0;j<windowsize;j++) {
-				checkack[j] = i+j-windowsize+1;
+			int checkack[countwindow];
+			int valintcheck[countwindow];
+			for (int j=0;j<countwindow;j++) {
+				checkack[j] = i+j-countwindow+1;
 				valintcheck[j] = 0;
 			}
 			int k = 0;
@@ -178,17 +180,14 @@ int main(int argc, char** argv) {
 				}
 				printACK(ackseg);
 				fflush(stdout);
-				if (end) {
-					exit(1);
-				}
 				k++;
 				iter++;
 			}
-	 		while (k < windowsize && iter < 8);
+	 		while (k < countwindow && iter < 8);
 
-			while (countack < windowsize) {
+			while (countack < countwindow) {
 				// Retransmit
-				for (int l=0;l<windowsize;l++) {
+				for (int l=0;l<countwindow;l++) {
 					if (valintcheck[l] == 0) {
 						// Create segment from buffer
 						seg.soh = '\01';
@@ -225,20 +224,34 @@ int main(int argc, char** argv) {
 						}
 						printACK(ackseg);
 						fflush(stdout);
-						if (end) {
-							exit(1);
-						}
 					}
 				}
 			}
 			// Expand window
-			window_left += windowsize;
-			window_right += windowsize;
-			printf("\n*WINDOW EXPANDED*\n");
+			if (countack == windowsize) {
+				window_left += windowsize;
+				window_right += windowsize;
+				printf("\n*WINDOW EXPANDED*\n");
+			}
 		}
 		bufflen += strlen(buff);
 	}
 	fclose(f);
+
+	// Signal finish to server
+	// Create segment from buffer
+	seg.soh = '\00';
+	seg.sequencenumber = 0;
+	seg.stx = '\02';
+	seg.data = '.';
+	seg.etx = '\03';
+	seg.checksum = 8;
+
+	// Make string from segment
+	segmentToString(&seg, segstr);
+
+	// Send segment
+	sendto(sock, segstr, 9, 0, (struct sockaddr *)&server_addr, sizeof(struct sockaddr));
 
 	close(sock);
 	return 0;

@@ -134,6 +134,14 @@ int main(int argc, char** argv) {
 		}
 		bufftemp[bytes_read] = '\0';
 
+		// EOF
+		if (bufftemp[0] == '\00') {
+			for (int k=6;k<i;k=k+9) {
+				fputc(buff[k], f);
+			}
+			exit(1);
+		}
+
 		// Create segment from buffer
 		if (*bufftemp == '\01' && *(bufftemp+5) == '\02' && *(bufftemp+7) == '\03') {
 			seg.soh = *bufftemp;
@@ -178,14 +186,35 @@ int main(int argc, char** argv) {
 				printACK(ackseg);
 				fflush(stdout);
 			}
-		}
+			else {
+				// Input segment to buffer
+				for (int j=0;j<9;j++) {
+					buff[i] = bufftemp[j];
+					i++;
+					if (i == buffersize) {
+						// Write segment to file
+						for (int k=6;k<buffersize;k=k+9) {
+							fputc(buff[k], f);
+						}
+						i = 0;
+					}
+				}
 
-		if (buff[6] == '.') {
-			// Write segment to file
-			for (int k=6;k<i;k=k+9) {
-				fputc(buff[k], f);
+				// Make broken ACK
+				ackseg.ack = '\00';
+				ackseg.nextsequencenumber = seg.sequencenumber + windowsize;
+				ackseg.advertisedwindowsize = windowsize;
+				ackseg.checksum = 6;
+
+				// Send string from ACK
+				ACKToString(&ackseg, ackstr);
+				sendto(sock, ackstr, 7, 0, (struct sockaddr *)&client_addr, sizeof(struct sockaddr));
+
+				// Test ACK
+				printf("\n*SENT BROKEN ACKS %d*\n",seg.sequencenumber);
+				printACK(ackseg);
+				fflush(stdout);
 			}
-			exit(1);
 		}
     }
     fclose(f);
