@@ -1,3 +1,4 @@
+#include <iostream>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -7,9 +8,10 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
-
+#include <ctime>
 #include "segment.h"
-
+#include <fstream>
+using namespace std;
 
 int8_t CheckSumSegment(segment segdata){
 	int8_t checksum = 0;
@@ -72,6 +74,11 @@ void printACK(acks ackseg) {
 }
 
 int main(int argc, char** argv) {
+
+	time_t logtimenow;
+	struct tm * now;
+	ofstream ofs;
+	ofs.open("logfile.txt",std::ofstream::out | std::ofstream::app);
 	// Validate execution format
 	if (argc < 5) {
 		perror("Execution Format : ./recvfile <filename> <windowsize> <buffersize> <port>");
@@ -111,6 +118,15 @@ int main(int argc, char** argv) {
     addr_len = sizeof(struct sockaddr);
 
     // Wait for client
+    logtimenow=time(0);
+	now = localtime(&logtimenow);
+	ofs<<(now->tm_year + 1900) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday << " - ";
+	ofs <<now->tm_hour << ":";
+   	ofs <<now->tm_min << ":";
+   	ofs <<now->tm_sec << " ";
+   	ofs <<"RECEIVER :";
+   	ofs <<" UDPServer Waiting for client on port ";
+   	ofs<<port<<endl;
     printf("\nUDPServer Waiting for client on port %d\n", port);
     fflush(stdout);
 
@@ -152,6 +168,15 @@ int main(int argc, char** argv) {
 			seg.checksum = *(bufftemp+8);
 
 			// Test segment
+			logtimenow=time(0);
+			now = localtime(&logtimenow);
+			ofs<<(now->tm_year + 1900) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday << " - ";
+			ofs <<now->tm_hour << ":";
+		   	ofs <<now->tm_min << ":";
+		   	ofs <<now->tm_sec << " ";
+		   	ofs <<"RECEIVER :";
+		   	ofs <<" RECEIVED SEGMENT :";
+		   	ofs<<seg.sequencenumber<<endl;
 			printf("\n*RECEIVED SEGMENT %d*\n",seg.sequencenumber);
 			printSegment(seg);
 			fflush(stdout);
@@ -182,6 +207,15 @@ int main(int argc, char** argv) {
 				sendto(sock, ackstr, 7, 0, (struct sockaddr *)&client_addr, sizeof(struct sockaddr));
 
 				// Test ACK
+				logtimenow=time(0);
+				now = localtime(&logtimenow);
+				ofs<<(now->tm_year + 1900) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday << " - ";
+				ofs <<now->tm_hour << ":";
+			   	ofs <<now->tm_min << ":";
+			   	ofs <<now->tm_sec << " ";
+			   	ofs <<"RECEIVER :";
+			   	ofs <<" SENT ACKS :";
+			   	ofs<<seg.sequencenumber<<endl;
 				printf("\n*SENT ACKS %d*\n",seg.sequencenumber);
 				printACK(ackseg);
 				fflush(stdout);
@@ -211,6 +245,15 @@ int main(int argc, char** argv) {
 				sendto(sock, ackstr, 7, 0, (struct sockaddr *)&client_addr, sizeof(struct sockaddr));
 
 				// Test ACK
+				logtimenow=time(0);
+				now = localtime(&logtimenow);
+				ofs<<(now->tm_year + 1900) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday << " - ";
+				ofs <<now->tm_hour << ":";
+			   	ofs <<now->tm_min << ":";
+			   	ofs <<now->tm_sec << " ";
+			   	ofs <<"RECEIVER :";
+			   	ofs <<" SENT BROKEN ACKS :";
+			   	ofs<<seg.sequencenumber<<endl;
 				printf("\n*SENT BROKEN ACKS %d*\n",seg.sequencenumber);
 				printACK(ackseg);
 				fflush(stdout);
@@ -218,7 +261,8 @@ int main(int argc, char** argv) {
 		}
     }
     fclose(f);
-
+    ofs.close();
     close(sock);
+
     return 0;
 }

@@ -1,4 +1,5 @@
 #include <sys/types.h>
+#include <iostream>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -9,8 +10,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
-
+#include <fstream> 
+#include <ctime>
 #include "segment.h"
+using namespace std;
 
 int8_t CheckSumACK(acks ackdata){
 	int8_t checksum = 0;
@@ -74,6 +77,11 @@ void printACK(acks ackseg) {
 
 int main(int argc, char** argv) {
 	// Validate execution format
+	time_t logtimenow;
+	struct tm * now;
+	ofstream ofs;
+  	ofs.open ("logfile.txt", std::ofstream::out | std::ofstream::app);
+
 	if (argc < 6) {
 		perror("Execution Format : ./sendfile <filename> <windowsize> <buffersize> <destination_ip> <destination_port>");
 		exit(1);
@@ -147,6 +155,15 @@ int main(int argc, char** argv) {
 				sendto(sock, segstr, 9, 0, (struct sockaddr *)&server_addr, sizeof(struct sockaddr));
 
 				// Test segment
+				logtimenow=time(0);
+				now = localtime(&logtimenow);
+				ofs<<(now->tm_year + 1900) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday << " - ";
+				ofs <<now->tm_hour << ":";
+			   	ofs <<now->tm_min << ":";
+			   	ofs <<now->tm_sec << " ";
+			   	ofs <<"SENDER : ";
+			   	ofs <<"SENDER SENT SEGMENT ";
+			   	ofs<<seg.sequencenumber<<endl;
 				printf("\n*SENT SEGMENT %d*\n",seg.sequencenumber);
 				printSegment(seg);
 				fflush(stdout);
@@ -179,9 +196,27 @@ int main(int argc, char** argv) {
 				if (ackseg.ack == '\06' && ackseg.checksum == CheckSumACK(ackseg)) {
 					valintcheck[k]++;
 					countack++;
+					logtimenow=time(0);
+					now = localtime(&logtimenow);
+					ofs<<(now->tm_year + 1900) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday << " - ";
+					ofs <<now->tm_hour << ":";
+				   	ofs <<now->tm_min << ":";
+				   	ofs <<now->tm_sec << " ";
+				   	ofs <<"SENDER : ";
+				   	ofs <<"RECEIVED ACKS ";
+				   	ofs <<ackseg.nextsequencenumber-windowsize<<endl;
 					printf("\n*RECEIVED ACKS %d*\n",ackseg.nextsequencenumber-windowsize);
 				}
 				else {
+					logtimenow=time(0);
+					now = localtime(&logtimenow);
+					ofs<<(now->tm_year + 1900) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday << " - ";
+					ofs <<now->tm_hour << ":";
+				   	ofs <<now->tm_min << ":";
+				   	ofs <<now->tm_sec << " ";
+				   	ofs <<"SENDER : ";
+				   	ofs <<"RECEIVED BROKEN ACKS ";
+				   	ofs <<ackseg.nextsequencenumber-windowsize<<endl;
 					printf("\n*RECEIVED BROKEN ACKS %d*\n",ackseg.nextsequencenumber-windowsize);
 				}
 				printACK(ackseg);
@@ -210,6 +245,15 @@ int main(int argc, char** argv) {
 						sendto(sock, segstr, 9, 0, (struct sockaddr *)&server_addr, sizeof(struct sockaddr));
 
 						// Test segment
+						logtimenow=time(0);
+						now = localtime(&logtimenow);
+						ofs<<(now->tm_year + 1900) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday << " - ";
+						ofs <<now->tm_hour << ":";
+					   	ofs <<now->tm_min << ":";
+					   	ofs <<now->tm_sec << " ";
+					   	ofs <<"SENDER : ";
+					   	ofs <<"SENT SEGMENT ";
+					   	ofs <<seg.sequencenumber<<endl;
 						printf("\n*SENT SEGMENT %d*\n",seg.sequencenumber);
 						printSegment(seg);
 						fflush(stdout);
@@ -223,9 +267,27 @@ int main(int argc, char** argv) {
 						if (ackseg.ack == '\06' && ackseg.checksum == CheckSumACK(ackseg)) {
 							valintcheck[k]++;
 							countack++;
+							logtimenow=time(0);
+							now = localtime(&logtimenow);
+							ofs<<(now->tm_year + 1900) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday << " - ";
+							ofs <<now->tm_hour << ":";
+						   	ofs <<now->tm_min << ":";
+						   	ofs <<now->tm_sec << " ";
+						   	ofs <<"SENDER : ";
+						   	ofs <<"RECEIVED ACKS ";
+						   	ofs <<ackseg.nextsequencenumber-windowsize<<endl;
 							printf("\n*RECEIVED ACKS %d*\n",ackseg.nextsequencenumber-windowsize);
 						}
 						else {
+							logtimenow=time(0);
+							now = localtime(&logtimenow);
+							ofs<<(now->tm_year + 1900) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday << " - ";
+							ofs <<now->tm_hour << ":";
+						   	ofs <<now->tm_min << ":";
+						   	ofs <<now->tm_sec << " ";
+						   	ofs <<"SENDER : ";
+						   	ofs <<"RECEIVED BROKEN ACKS ";
+						   	ofs <<ackseg.nextsequencenumber-windowsize<<endl;
 							printf("\n*RECEIVED BROKEN ACKS %d*\n",ackseg.nextsequencenumber-windowsize);
 						}
 						printACK(ackseg);
@@ -237,6 +299,16 @@ int main(int argc, char** argv) {
 			if (countack == windowsize) {
 				window_left += windowsize;
 				window_right += windowsize;
+				logtimenow=time(0);
+				now = localtime(&logtimenow);
+				ofs<<(now->tm_year + 1900) << '-' << (now->tm_mon + 1) << '-' <<  now->tm_mday << " - ";
+				ofs <<now->tm_hour << ":";
+			   	ofs <<now->tm_min << ":";
+			   	ofs <<now->tm_sec << " ";
+			   	ofs <<"SENDER : ";
+			   	ofs <<"WINDOW EXPANDED ";
+			   	ofs <<"WINDOW LEFT "<<window_left<<" ";
+			   	ofs <<"WINDOW RIGHT "<<window_right<<endl;
 				printf("\n*WINDOW EXPANDED*\n");
 			}
 		}
@@ -258,7 +330,8 @@ int main(int argc, char** argv) {
 
 	// Send segment
 	sendto(sock, segstr, 9, 0, (struct sockaddr *)&server_addr, sizeof(struct sockaddr));
-
+	ofs<<"FILE SUCCESSFULLY SEND"<<endl;
+	ofs.close();
 	close(sock);
 	return 0;
 }
