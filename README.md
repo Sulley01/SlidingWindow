@@ -9,7 +9,29 @@ Simulasi sliding window memanfaatkan UDP Socket
 	silahkan ubah parameter dalam tag <> sesuai dengan kebutuhan anda
 
 ## Cara Kerja
+### UDP Socket
+1.	Eksekusi program recvfile (server).
+2.	Program recvfile akan membentuk koneksi terhadap UDP socket sesuai dengan input eksekusi.
+3.	Program recvfile akan menunggu client untuk membentuk koneksi terhadap UDP socket.
+4.	Eksekusi program sendfile (client).
+5.	Program sendfile juga akan membentuk koneksi terhadap UDP socket sesuai dengan input eksekusi.
+6.	Server dan client akan terhubung di dalam UDP socket.
 
+### Sliding Window
+7.	Client akan membaca file eksternal dari input dan dimasukkan ke buffer sebanyak buffer bisa menampung.
+8.	Client akan mengambil karakter dari buffer satu per satu untuk dijadikan segment sejumlah window size.
+9.	Segment kemudian dikirim ke server.
+10. Server menerima segment dari client.
+11.	Segment yang diterima akan diperiksa terlebih dahulu apakah memenuhi checksum. Jika ya, maka segment dimasukkan ke dalam buffer.
+12. Server membentuk ACK sebagai penanda penerimaan segment lalu dikirim ke client.
+13. Client menerima ACK dan mendata semua ACK yang telah diterima.
+14.	Client akan menggeser window sebanyak buffer size jika semua segment yang dikirim pada cangkupan window telah dibalas dengan ACK.
+15. Setelah window digeser, client dapat kembali mengirim segment dari buffer.
+16. Jika buffer client penuh, maka buffer akan dikosongkan setelah semua isi buffer dikirim, lalu pembacaan file dilanjutkan.
+17. Jika buffer server penuh, maka seluruh isi buffer akan dituliskan ke file eksternal lalu pengisian buffer diisi dari paling depan kembali.
+18.	Setelah seluruh segment terkirim, client akan mengirim sebuah segment tambahan sebagai penanda akhir file.
+19. Setelah server menerima segment penanda akhir file, jika pada buffer server ada isi yang belum dituliskan, maka sisa isi tersebut dituliskan ke file.
+20. Client dan server menutup file dan socket.
 
 ## Pembagian tugas
 * Alvin Sullivan - 13515048
